@@ -1,0 +1,16 @@
+# Google Cloud SDK
+google-cloud-sdk/
+
+# Python / Django
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+db.sqlite3
+
+# Environment Variables / Secrets
+.env
+.environ
+
+# macOS System Files
+.DS_Store

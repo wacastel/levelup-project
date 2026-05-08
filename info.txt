@@ -1,0 +1,12 @@
+# Create a project directory
+mkdir levelup-project && cd levelup-project
+
+# Set up a virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install Django
+pip install django
+
+# Initialize the project
+django-admin startproject config .
