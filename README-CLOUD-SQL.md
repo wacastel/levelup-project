@@ -54,3 +54,18 @@ To reduce costs further, downgrade the storage from SSD to standard spinning dis
 1. Review the "Pricing estimate" in the bottom corner. It should reflect the low hourly cost of the shared-core machine and HDD storage.
 2. Click the blue **Create Instance** button at the bottom of the page.
 3. Wait 5-10 minutes for the instance to provision and show a green checkmark indicating it is ready to accept connections.
+
+## Step 8: Create the Database
+The previous steps created the database *server* (the Instance). Now you need to create the actual database inside that server.
+1. Once the instance has a green checkmark, click on its name (`level-db-instance`) to open the Overview page.
+2. In the left-hand menu, click on the **Databases** tab.
+3. Click the blue **Create database** button at the top.
+4. Name your database (e.g., `levelup_db`). Using an underscore is standard practice for PostgreSQL.
+5. Click **Create**.
+
+## Step 9: Retrieve Your Connection Name
+To connect your local Django application (via the Auth Proxy) or App Engine environment to this cloud database, you need the instance's unique connection string.
+1. Navigate back to the **Overview** page for your instance.
+2. Scroll down to the **Connect to this instance** section.
+3. Locate the **Connection name** (it will look like `your-project-id:us-central1:level-db-instance`).
+4. Copy and save this string to use with your Cloud SQL Auth Proxy and in your `app.yaml` configuration.

@@ -1,0 +1,15 @@
+# Note: GAE currently supports up to python312 for the standard environment.
+# Even if you are using 3.13 locally, 3.12 will run your code perfectly in the cloud.
+runtime: python312
+
+env_variables:
+  # We pass the production database credentials securely through the environment
+  DB_NAME: "levelup_db"
+  DB_USER: "postgres"
+  DB_PASS: "Plot5150!"
+  # Be sure this matches your exact connection string from earlier
+  CLOUD_SQL_CONNECTION_NAME: "levelup-prod-495722:us-central1:level-db-instance"
+
+handlers:
+- url: /.*
+  script: auto

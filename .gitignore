@@ -1,6 +1,9 @@
 # Google Cloud SDK
 google-cloud-sdk/
 
+# Google Cloud SQL Proxy
+cloud-sql-proxy/
+
 # Python / Django
 venv/
 __pycache__/
