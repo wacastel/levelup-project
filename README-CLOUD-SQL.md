@@ -2,7 +2,7 @@
 
 When deploying a Django project like **LevelUp** to Google Cloud Platform (GCP), it is crucial to manage costs, especially during development. GCP's default Cloud SQL creation screens often steer users toward high-performance, expensive "Enterprise Plus" tiers. 
 
-This guide details how to bypass those prompts and configure an ultra-low-cost `db-f1-micro` PostgreSQL instance (approximately $0.01/hour) using the updated Cloud console UI.
+This guide details how to bypass those prompts and configure an ultra-low-cost `db-f1-micro` PostgreSQL instance (approximately $0.01/hour) using the Cloud console UI, and how to securely connect it to your local environment for initial database setup.
 
 ---
 
@@ -29,7 +29,7 @@ If this is a brand new GCP project, you may hit an interim screen requiring you 
 ## Step 4: Basic Instance Info
 1. **Database version:** Select the latest supported version (e.g., **PostgreSQL 18**).
 2. **Instance ID:** Name your instance (e.g., `level-db-instance`). Use lowercase letters and hyphens.
-3. **Password:** Click **Generate** or type a highly secure password for the default `postgres` user. **Save this password immediately**, as you will need it for your Django `settings.py` file!
+3. **Password:** Click **Generate** or type a highly secure password for the default `postgres` user. **Save this password immediately**, as you will need it for your Django `.env` and `app.yaml` files!
 4. **Region:** Choose a region close to you (e.g., `us-central1 (Iowa)`). Leave Zonal availability as **Single zone** to save costs.
 
 ## Step 5: The Micro-Tier Hardware Configuration
@@ -57,15 +57,45 @@ To reduce costs further, downgrade the storage from SSD to standard spinning dis
 
 ## Step 8: Create the Database
 The previous steps created the database *server* (the Instance). Now you need to create the actual database inside that server.
+
 1. Once the instance has a green checkmark, click on its name (`level-db-instance`) to open the Overview page.
 2. In the left-hand menu, click on the **Databases** tab.
 3. Click the blue **Create database** button at the top.
-4. Name your database (e.g., `levelup_db`). Using an underscore is standard practice for PostgreSQL.
+4. Name your database (e.g., `levelup_db`).
 5. Click **Create**.
 
 ## Step 9: Retrieve Your Connection Name
-To connect your local Django application (via the Auth Proxy) or App Engine environment to this cloud database, you need the instance's unique connection string.
+To connect your local Django application or App Engine environment to this cloud database, you need the instance's unique connection string.
+
 1. Navigate back to the **Overview** page for your instance.
 2. Scroll down to the **Connect to this instance** section.
-3. Locate the **Connection name** (it will look like `your-project-id:us-central1:level-db-instance`).
-4. Copy and save this string to use with your Cloud SQL Auth Proxy and in your `app.yaml` configuration.
+3. Locate the **Connection name** (it will look like `YOUR_PROJECT_ID:us-central1:level-db-instance`).
+4. Copy and save this string.
+
+---
+
+## Step 10: Local Connection via Cloud SQL Auth Proxy
+To run production migrations from your local Mac/PC before deploying to App Engine, you must use the Cloud SQL Auth Proxy. This creates a secure, encrypted tunnel from your local machine directly to the Google data center.
+
+1. Download the Cloud SQL Proxy binary for your OS (e.g., Apple Silicon ARM64) and place it in your project root folder.
+2. Open a dedicated terminal tab and start the proxy using your connection string:
+
+    ./cloud-sql-proxy YOUR_PROJECT_ID:us-central1:level-db-instance
+
+3. Keep this terminal tab open. Wait until the terminal outputs: **"Ready for new connections"**.
+
+## Step 11: Initializing the Production Database
+A brand new Cloud SQL database is completely empty. It does not have the tables required to store user accounts or Django app data. If you attempt to create a superuser or boot the application now, you will encounter a `relation "auth_user" does not exist` error.
+
+While the Cloud SQL proxy is running in the background, open a **new terminal tab**, activate your virtual environment, and push your schemas to the cloud:
+
+1. **Apply Migrations:**
+
+    python manage.py migrate
+    
+2. **Create the Production Admin:**
+Once the migrations complete successfully, generate the administrator account for your live site:
+
+    python manage.py createsuperuser
+
+Your Cloud SQL database is now fully configured, populated with your Django tables, and ready for the App Engine deployment!
