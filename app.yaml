@@ -1,6 +1,8 @@
 # Note: GAE currently supports up to python312 for the standard environment.
 # Even if you are using 3.13 locally, 3.12 will run your code perfectly in the cloud.
 runtime: python312
+# Add this line right below your runtime:
+entrypoint: gunicorn -b :$PORT config.wsgi:application
 
 env_variables:
   # We pass the production database credentials securely through the environment
