@@ -15,6 +15,9 @@
             {% csrf_token %}
             <button type="submit">Log Out</button>
         </form>
+        <a href="{% url 'habit_list' %}">
+            <button type="button">Go to My Dashboard</button>
+        </a>
     {% else %}
         <p>Your journey begins here. Please log in or create an account.</p>
         <a href="{% url 'login' %}">Log In</a> | 

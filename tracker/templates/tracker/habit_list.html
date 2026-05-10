@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Habits - LevelUp</title>
+</head>
+<body>
+    <h1>LevelUp Dashboard</h1>
+    
+    <div>
+        <p>
+            <strong>Player:</strong> {{ user.username }} | 
+            <strong>Level:</strong> {{ user.level }} | 
+            <strong>XP:</strong> {{ user.xp }} / {{ user.calculate_next_level_threshold }}
+        </p>
+    </div>
+    
+    <a href="{% url 'home' %}">Back to Home</a>
+
+    <hr>
+
+    {% if messages %}
+        <ul style="color: green;">
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <h2>Your Daily Quests (Habits)</h2>
+    {% if habits %}
+        <ul>
+        {% for habit in habits %}
+            <li style="margin-bottom: 15px;">
+                <strong>{{ habit.title }}</strong> <span style="color: blue;">(+{{ habit.xp_reward }} XP)</span>
+                {% if habit.description %}
+                    <br><em>{{ habit.description }}</em>
+                {% endif %}
+                <br>
+                <a href="{% url 'complete_habit' habit.id %}">
+                    <button type="button">Log Completion</button>
+                </a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>You don't have any habits yet. Time to add your first quest!</p>
+    {% endif %}
+
+    <hr>
+
+    <h2>Create a New Habit</h2>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Create Habit</button>
+    </form>
+
+</body>
+</html>

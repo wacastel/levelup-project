@@ -1,0 +1,811 @@
+
+
+### ./config/urls.py ###
+
+"""
+URL configuration for config project.
+
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/6.0/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.urls import include, path
+    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+"""
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    # Django's built-in auth URLs
+    path('accounts/', include('django.contrib.auth.urls')), 
+    # Custom accounts URLs (for signup)
+    path('accounts/', include('accounts.urls')), 
+    
+    # Hook in the tracker application routing
+    path('tracker/', include('tracker.urls')), 
+    
+    # The landing page route
+    path('', include('pages.urls')),
+]
+
+
+### ./tracker/models.py ###
+
+from django.db import models
+from django.conf import settings # Import settings instead of default User
+
+# Corrected: subclass models.Model instead of models.fields.Model
+class Habit(models.Model):
+    # Tie each habit to a specific user
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='habits')
+    
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    
+    # How much XP this habit is worth when completed
+    xp_reward = models.PositiveIntegerField(default=10) 
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+# Corrected: subclass models.Model instead of models.fields.Model
+class DailyLog(models.Model):
+    # A record of when a habit was completed
+    habit = models.ForeignKey(Habit, on_delete=models.CASCADE, related_name='logs')
+    completed_date = models.DateField(auto_now_add=True)
+    
+    # Optional: Allow notes on how the completion went
+    notes = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        # Prevent logging the same habit multiple times on the same day
+        unique_together = ['habit', 'completed_date']
+
+    def __str__(self):
+        return f"{self.habit.title} completed on {self.completed_date}"
+
+
+### ./tracker/urls.py ###
+
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    # The main dashboard to list and add habits
+    path('habits/', views.habit_list, name='habit_list'),
+    
+    # The endpoint to handle logging a completion
+    path('habits/<int:habit_id>/complete/', views.complete_habit, name='complete_habit'),
+]
+
+
+### ./staticfiles/admin/img/README.md ###
+
+# Information about icons in this directory
+
+## License
+
+All icons in this directory are provided by
+[Font Awesome Free](https://fontawesome.com), version 6.7.2.
+
+- The icons are licensed under the [Creative Commons Attribution 4.0
+  International (CC-BY-4.0)](https://creativecommons.org/licenses/by/4.0/)
+  license.
+- This license allows you to use, modify, and distribute the icons, provided
+  proper attribution is given.
+
+## Usage
+
+- You may use, modify, and distribute the icons in this repository in
+  compliance with the [Creative Commons Attribution 4.0 International
+  (CC-BY-4.0)](https://creativecommons.org/licenses/by/4.0/) license.
+
+## Modifications
+
+- These icons have been resized, recolored, or otherwise modified to fit the
+  requirements of this project.
+
+- These modifications alter the appearance of the original icons but remain
+  covered under the terms of the
+  [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/) license.
+
+## Contributing SVG Icons
+
+To ensure visual consistency, traceability, and proper license attribution,
+follow these guidelines. This applies when adding or modifying icons.
+
+## ⚠️ Important: Changing Font Awesome Version
+
+If you update to a different Font Awesome version, you must **update all SVG
+files** and **comments inside the files** to reflect the new version number and
+licensing URL accordingly. For example:
+
+* Original:
+```xml
+<!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+```
+* Updated:
+```xml
+<!--!Font Awesome Free X.Y.Z by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright YYYY Fonticons, Inc.-->
+```
+
+## Adding a new icon
+
+1. Use only [Font Awesome Free Icons](https://fontawesome.com/icons).
+2. Save the icon as an .svg file in this directory.
+3. Include the following attribution comment at the top of the file (do not
+   change it):
+```xml
+<!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+```
+4. Right before the `<path>` element, add the following metadata comment with
+   the appropriate values:
+```xml
+<!--
+  Icon Name: [icon-name]
+  Icon Family: [classic | sharp | brands | etc.]
+  Icon Style: [solid | regular | light | thin | duotone | etc.]
+-->
+```
+
+### Example SVG Structure
+
+```xml
+<svg width="13" height="13" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+  <!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+  <!--
+    Icon Name: plus
+    Icon Family: classic
+    Icon Style: solid
+  -->
+  <path fill="#5fa225" stroke="#5fa225" stroke-width="30" d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
+</svg>
+```
+
+
+### ./README.md ###
+
+# LevelUp - Gamify Your Goals
+
+**LevelUp** is a Django-based web application designed to help users track their habits and goals through a gamified experience. By completing daily tasks, users earn XP (Experience Points) and progress through levels, turning personal productivity into a role-playing game (RPG) journey.
+
+---
+
+## 🚀 Features
+
+* **User Authentication**: Secure sign-up and log-in system using Django's built-in authentication framework.
+* **Habit Tracking**: Define habits with custom XP rewards.
+* **Daily Logs**: Record habit completion with specific notes and daily constraints.
+* **Django Admin Integration**: A fully customized dashboard for administrative data management.
+* **Production-Ready Server**: WSGI configuration running via Gunicorn for high-concurrency request handling.
+* **Test-Driven Development (TDD)**: Comprehensive unit tests for Models, Views, and URL routing.
+
+---
+
+## 🛠️ Tech Stack
+
+* **Backend**: Python 3.12+ / Django 5.x
+* **Web Server (WSGI)**: Gunicorn
+* **Database**: SQLite (Local Dev) / PostgreSQL (Cloud SQL Production)
+* **Cloud Infrastructure**: Google App Engine (Standard Environment)
+* **Container Registry**: Google Artifact Registry
+* **Static Files**: Whitenoise for efficient static file serving in production environments.
+
+---
+
+## ⚙️ Local Setup and Installation
+
+Follow these steps to get the project running on your local machine:
+
+1. **Clone the repository**:
+    git clone https://github.com/your-username/levelup-project.git
+    cd levelup-project
+
+2. **Set up a virtual environment**:
+    python3 -m venv venv
+    source venv/bin/activate
+
+3. **Install dependencies**:
+    pip install -r requirements.txt
+
+4. **Apply local database migrations**:
+    python manage.py makemigrations
+    python manage.py migrate
+
+5. **Create a local superuser** (for Admin access):
+    python manage.py createsuperuser
+
+6. **Launch the development server**:
+    python manage.py runserver
+
+Visit `http://127.0.0.1:8000/` in your browser!
+
+---
+
+## ☁️ Google Cloud Deployment Guide
+
+This application is fully architected for production deployment on **Google Cloud Platform (GCP)**. 
+
+### 1. Prerequisites & GCP Setup
+Ensure you have the Google Cloud SDK installed globally on your system (not inside the project directory) and initialize your project:
+
+    gcloud init
+    gcloud services enable artifactregistry.googleapis.com cloudbuild.googleapis.com
+
+### 2. IAM Permissions
+The App Engine default service account requires specific permissions to successfully build containers and write to storage buckets. Apply the following roles to your `[PROJECT_ID]@appspot.gserviceaccount.com` service account:
+
+    gcloud projects add-iam-policy-binding [PROJECT_ID] \
+      --member="serviceAccount:[PROJECT_ID]@appspot.gserviceaccount.com" \
+      --role="roles/artifactregistry.admin"
+
+    gcloud projects add-iam-policy-binding [PROJECT_ID] \
+      --member="serviceAccount:[PROJECT_ID]@appspot.gserviceaccount.com" \
+      --role="roles/storage.admin"
+
+### 3. File Optimization (.gcloudignore)
+To ensure fast, lean deployments without file-limit errors, ensure a `.gcloudignore` file is present in the root directory. This prevents uploading virtual environments and SDKs:
+
+    .gcloudignore
+    .git/
+    .gitignore
+    venv/
+    env/
+    .venv/
+    google-cloud-sdk/
+    __pycache__/
+    *.pyc
+    .env
+
+### 4. Application Configuration (app.yaml)
+App Engine requires an `app.yaml` file to define the runtime and database connections. Crucially, the `entrypoint` must be defined so Google's Nginx server knows how to boot the Django WSGI application via Gunicorn:
+
+    runtime: python312
+    entrypoint: gunicorn -b :$PORT config.wsgi:application
+
+    env_variables:
+      # Add environment variables here
+
+### 5. Deployment
+Deploy the application to App Engine:
+
+    gcloud app deploy
+
+### 6. Production Database Migrations (Cloud SQL Proxy)
+App Engine handles the application code, but the Cloud SQL PostgreSQL database must be migrated separately using the Cloud SQL Auth Proxy.
+
+In a separate terminal tab, start the proxy:
+
+    ./cloud-sql-proxy [CONNECTION_NAME]
+
+While the proxy is running, apply the migrations and create the production administrator account from your main terminal:
+
+    python manage.py migrate
+    python manage.py createsuperuser
+
+---
+
+## 🧪 Running Tests
+
+This project follows a strict TDD workflow. To run the full test suite for the `pages`, `tracker`, and `accounts` apps:
+
+    python manage.py test
+
+---
+
+## 📜 License
+
+This project is open-source and available under the MIT License.
+
+### ./README-APP-ENGINE.md ###
+
+# Deploying Django to Google App Engine (GAE)
+
+This guide outlines the complete, production-ready process for taking a local Django application (**LevelUp**) and deploying it to the Google App Engine Standard Environment. 
+
+It assumes you have already provisioned a Google Cloud SQL instance and created a database (see `README-CLOUD-SQL.md`).
+
+---
+
+## Step 1: Pre-Flight File Optimization (.gcloudignore)
+
+By default, Google's deployment tool will attempt to upload every single file in your project folder, including your massive virtual environment and SDK tools. This will cause the deployment to hit file limits and fail.
+
+Create a file named `.gcloudignore` in the root of your project and add the following to keep your upload lean (aiming for under 200 files):
+
+    .gcloudignore
+    .git/
+    .gitignore
+    
+    # Virtual Environments & SDKs
+    venv/
+    env/
+    .venv/
+    google-cloud-sdk/
+    
+    # Python Cache & Local Configs
+    __pycache__/
+    *.pyc
+    .env
+    db.sqlite3
+
+## Step 2: Install Production Server Packages
+
+App Engine requires a production-grade web server to run Python, as well as a utility to serve Django's static files (like CSS and JavaScript) efficiently.
+
+1. Ensure your local virtual environment is activated.
+2. Install **Gunicorn** (the web server) and **Whitenoise** (the static file server):
+
+    pip install gunicorn whitenoise
+
+3. Freeze your dependencies so App Engine knows exactly what to install during deployment:
+
+    pip freeze > requirements.txt
+
+## Step 3: Configure `settings.py` for Production
+
+Django needs to know how to behave when it wakes up inside a Google data center. Open `config/settings.py` and make the following changes:
+
+**1. Allowed Hosts**
+Allow traffic from Google's domains:
+
+    ALLOWED_HOSTS = ['*']
+
+**2. Static File Serving**
+Add Whitenoise to your middleware, directly under `SecurityMiddleware`:
+
+    MIDDLEWARE = [
+        'django.middleware.security.SecurityMiddleware',
+        'whitenoise.middleware.WhiteNoiseMiddleware', # ADD THIS
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        # ...
+    ]
+
+Then, define the absolute path where Django should gather static files:
+
+    STATIC_URL = 'static/'
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+**3. Environment-Aware Database Connection**
+When running locally, connect via the `.env` file. When running on GAE, connect securely via Google's internal Unix Sockets:
+
+    # env('GAE_APPLICATION') is automatically injected by Google App Engine
+    if env('GAE_APPLICATION', default=None):
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': env('DB_NAME'),
+                'USER': env('DB_USER'),
+                'PASSWORD': env('DB_PASS'),
+                'HOST': f"/cloudsql/{env('CLOUD_SQL_CONNECTION_NAME')}",
+            }
+        }
+    else:
+        # Fallback to local .env configuration
+        DATABASES = {
+            'default': env.db(),
+        }
+
+## Step 4: The `app.yaml` Configuration File
+
+App Engine relies on `app.yaml` to understand your infrastructure requirements. Create this file in your project root. 
+
+*Crucial Note: You MUST include the `entrypoint` command. Without it, GAE will look for a `main.py` file, crash, and return a 502 Bad Gateway error.*
+
+    runtime: python312
+    
+    # Point the Gunicorn server to your specific Django wsgi file
+    entrypoint: gunicorn -b :$PORT config.wsgi:application
+    
+    env_variables:
+      DB_NAME: "levelup_db"
+      DB_USER: "postgres"
+      DB_PASS: "YourDatabasePassword"
+      CLOUD_SQL_CONNECTION_NAME: "YOUR_PROJECT_ID:us-central1:level-db-instance"
+    
+    handlers:
+    # Route all web traffic to the Django application
+    - url: /.*
+      script: auto
+
+## Step 5: Google Cloud Project Prep (APIs & IAM)
+
+Brand new Google Cloud projects start with heavy security restrictions and disabled APIs to save resources. You must manually open the doors for the deployment robot (the default service account).
+
+**1. Enable Required APIs**
+Turn on the Artifact Registry (container storage) and Cloud Build (the compiler):
+
+    gcloud services enable artifactregistry.googleapis.com cloudbuild.googleapis.com
+
+**2. Grant IAM Permissions**
+Give your App Engine service account the keys to write to the storage buckets and registries:
+
+    gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+      --member="serviceAccount:YOUR_PROJECT_ID@appspot.gserviceaccount.com" \
+      --role="roles/artifactregistry.admin"
+      
+    gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+      --member="serviceAccount:YOUR_PROJECT_ID@appspot.gserviceaccount.com" \
+      --role="roles/storage.admin"
+
+## Step 6: Collect Static Files
+
+Instruct Django to gather all static files (including the admin panel styles) into a single folder so Whitenoise can serve them. Run locally:
+
+    python manage.py collectstatic
+
+*(Type `yes` when prompted to overwrite existing files).*
+
+## Step 7: Deploy to Google Cloud
+
+With the APIs awake and the files optimized, push the code to Google's servers:
+
+    gcloud app deploy
+
+* **Note on Locked Deployments:** If a previous deployment crashed, Google may place a "ghost lock" on your default service (Error: *operation is already in progress*). This lock cannot be bypassed manually; you must wait 10 to 15 minutes for the internal system timeout to clear it before attempting to deploy again.
+
+## Step 8: Post-Deploy Database Migrations
+
+Your code is now live, but your production database is entirely empty. You must build the tables before the app will function.
+
+1. In a new terminal tab, start your Cloud SQL Auth Proxy to open a secure tunnel to your live database:
+
+    ./cloud-sql-proxy YOUR_PROJECT_ID:us-central1:level-db-instance
+
+2. Back in your main terminal, apply the migrations to the live database:
+
+    python manage.py migrate
+
+3. Create your production administrator account:
+
+    python manage.py createsuperuser
+
+## Step 9: Monitor and Launch
+
+Your application is fully deployed and connected! 
+
+To view real-time server logs (excellent for debugging 500 errors):
+
+    gcloud app logs tail -s default
+    
+To open your live production application in the browser:
+
+    gcloud app browse
+
+### ./README-DJANGO.md ###
+
+# LevelUp: Django Architecture & Implementation Guide
+
+This document serves as a deep dive into the architectural patterns of Django and how they are explicitly implemented to power the **LevelUp** gamified habit-tracking platform.
+
+It is designed as a technical reference guide to explain *how* Django works under the hood, and *why* the application is structured the way it is.
+
+---
+
+## 1. The Core Philosophy: MVT Architecture
+
+Django follows a design pattern known as **MVT (Model-View-Template)**. While similar to the traditional MVC (Model-View-Controller) pattern used by other frameworks, Django handles the "Controller" part itself.
+
+Here is how the responsibilities are divided in LevelUp:
+
+* **Model (The Data):** The single, definitive source of truth about your data. It contains the essential fields and behaviors of the data you are storing. Django translates these Python classes into complex PostgreSQL database tables automatically.
+* **View (The Logic):** The "brain" of the application. It receives an HTTP request from a user, retrieves the necessary data from the Models, applies business logic (like calculating XP or level-ups), and passes that data to a Template.
+* **Template (The Presentation):** The HTML/CSS structure that determines how the data is visually presented to the user. Django's templating engine allows us to inject dynamic Python variables directly into HTML.
+
+---
+
+## 2. Project vs. App Structure
+
+Django strictly separates the global configuration from the actual features of the application.
+
+* **The Project (`config/` or `levelup/`):** This is the management layer. It contains global settings (`settings.py`), the master routing map (`urls.py`), and the WSGI configuration (`wsgi.py`) used by Gunicorn and Google App Engine to boot the server.
+* **The Apps (`accounts/`, `tracker/`, `pages/`):** Django is modular. An "app" is a self-contained module that does one specific thing.
+* `accounts`: Handles user registration, login, and profile management.
+* `tracker`: The core engine of LevelUp (habits, daily logs, XP calculation).
+* `pages`: Handles static content like the landing page or about page.
+
+
+
+---
+
+## 3. LevelUp Models: The Database Blueprint
+
+In Django, you do not write raw SQL to create database tables. Instead, you write Python classes in `models.py`. Django's ORM (Object-Relational Mapper) translates these classes into your Cloud SQL database.
+
+### The Custom User Model
+
+By default, Django comes with a built-in User model. For LevelUp, we extend this to include RPG mechanics:
+
+```
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+
+class CustomUser(AbstractUser):
+    xp = models.IntegerField(default=0)
+    level = models.IntegerField(default=1)
+
+    def add_xp(self, amount):
+        self.xp += amount
+        # Logic to calculate if XP exceeds the threshold for the next level
+        if self.xp >= self.calculate_next_level_threshold():
+            self.level += 1
+        self.save()
+
+```
+
+### The Tracker Models
+
+The `tracker` app defines what users are interacting with daily.
+
+```
+class Habit(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    xp_reward = models.IntegerField(default=10)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+class DailyLog(models.Model):
+    habit = models.ForeignKey(Habit, on_delete=models.CASCADE)
+    completed_date = models.DateField(auto_now_add=True)
+    notes = models.TextField(blank=True, null=True)
+
+```
+
+* **Foreign Keys:** The `user = models.ForeignKey(...)` creates a one-to-many relationship. A user can have many habits. If the user is deleted (`on_delete=models.CASCADE`), all their habits are cleanly deleted from the PostgreSQL database as well.
+
+---
+
+## 4. Views & URLs: The Brains and the Map
+
+When a user interacts with LevelUp, Django uses `urls.py` to route their request to the correct function in `views.py`.
+
+### The URL Router (`urls.py`)
+
+This is the switchboard. When a user navigates to `levelup.com/habits/`, Django reads this file to figure out what Python code to execute.
+
+```
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('habits/', views.habit_list, name='habit_list'),
+    path('habits/<int:habit_id>/complete/', views.complete_habit, name='complete_habit'),
+]
+
+```
+
+### The Business Logic (`views.py`)
+
+The view processes the request. For LevelUp, this is where the gamification magic happens.
+
+```
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Habit, DailyLog
+
+def complete_habit(request, habit_id):
+    # 1. Fetch the habit, ensuring it belongs to the logged-in user
+    habit = get_object_or_404(Habit, id=habit_id, user=request.user)
+    
+    if request.method == "POST":
+        # 2. Create a log entry for today
+        DailyLog.objects.create(habit=habit, notes=request.POST.get('notes'))
+        
+        # 3. Reward the user with XP
+        request.user.add_xp(habit.xp_reward)
+        
+        # 4. Redirect them back to their dashboard
+        return redirect('habit_list')
+        
+    # If not a POST request, just show the confirmation page
+    return render(request, 'tracker/complete_habit.html', {'habit': habit})
+
+```
+
+---
+
+## 5. The Request/Response Cycle
+
+To fully understand Django, here is the exact lifecycle of a single interaction in LevelUp (e.g., clicking the "Complete Habit" button):
+
+1. **The Request:** The user's browser sends an HTTP POST request to `https://levelup.appspot.com/habits/5/complete/`.
+2. **The Server:** Google App Engine routes the traffic to Gunicorn.
+3. **The Router:** Gunicorn passes the request to Django's root `urls.py`. Django strips away the domain name, looks at `/habits/5/complete/`, and matches it to a URL pattern.
+4. **The View:** Django calls the `complete_habit` function, passing in the `request` object and the number `5` as the `habit_id`.
+5. **The ORM (Database):** The view asks the ORM for Habit #5. The ORM translates this into a highly optimized SQL `SELECT` query, securely runs it against your Cloud SQL PostgreSQL instance via the Unix socket, and returns the data as a Python object.
+6. **The Logic:** The view creates a new DailyLog, updates the user's XP, and saves both to the database.
+7. **The Response:** The view instructs Django to return an HTTP 302 Redirect back to the dashboard. The browser receives this and loads the updated page, showing the user their shiny new XP total.
+
+---
+
+## 6. The Django Admin: Free CRUD
+
+One of Django's most powerful features is the built-in Admin panel. By registering your models in `admin.py`, Django instantly generates a secure, production-ready GUI for managing your database.
+
+```
+from django.contrib import admin
+from .models import Habit, DailyLog
+
+# Registering the models makes them manageable at /admin/
+admin.site.register(Habit)
+admin.site.register(DailyLog)
+
+```
+
+In LevelUp, this allows administrators to manually adjust a user's XP, correct habit streaks, or moderate data without writing a single line of SQL or building custom internal tools.
+
+### ./accounts/models.py ###
+
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+
+class CustomUser(AbstractUser):
+    # Gamification fields
+    xp = models.PositiveIntegerField(default=0)
+    level = models.PositiveIntegerField(default=1)
+
+    def calculate_next_level_threshold(self):
+        """
+        Calculates how much total XP is needed to reach the NEXT level.
+        Base formula: 100 XP per current level. 
+        (e.g., Level 1 needs 100 XP to hit Level 2. Level 2 needs 200 XP to hit Level 3)
+        """
+        return self.level * 100
+
+    def add_xp(self, amount):
+        """
+        Adds XP to the user and checks for level ups.
+        """
+        self.xp += amount
+        
+        # Loop in case they earn a massive amount of XP and level up multiple times at once
+        while self.xp >= self.calculate_next_level_threshold():
+            # Deduct the threshold amount (or keep it cumulative, depending on your preference)
+            # For this example, we'll use cumulative XP, so we just increment the level
+            self.level += 1
+            
+        self.save()
+
+    def __str__(self):
+        return f"{self.username} (Level {self.level})"
+
+
+### ./accounts/urls.py ###
+
+from django.urls import path
+from .views import SignUpView
+
+urlpatterns = [
+    path("signup/", SignUpView.as_view(), name="signup"),
+]
+
+
+### ./README-CLOUD-SQL.md ###
+
+# Provisioning a Micro-Tier Cloud SQL Instance 
+
+When deploying a Django project like **LevelUp** to Google Cloud Platform (GCP), it is crucial to manage costs, especially during development. GCP's default Cloud SQL creation screens often steer users toward high-performance, expensive "Enterprise Plus" tiers. 
+
+This guide details how to bypass those prompts and configure an ultra-low-cost `db-f1-micro` PostgreSQL instance (approximately $0.01/hour) using the Cloud console UI, and how to securely connect it to your local environment for initial database setup.
+
+---
+
+## Step 1: Navigate to Cloud SQL
+1. Log into the Google Cloud Console.
+2. Ensure your target project is selected in the top navigation bar.
+3. Open the left-hand **Navigation Menu** (hamburger icon).
+4. Scroll down through the Products list and click on **Cloud SQL** (located between *Databases* and *Google Maps Platform*).
+
+## Step 2: Bypass the Enterprise Plus Promo
+When creating a new instance, Google often displays a large banner offering "30 days at no cost" for an Enterprise Plus edition (e.g., 8 vCPUs, 64GB RAM). Do not use this for a lightweight dev environment, as it will drain credits rapidly after the 30 days.
+
+1. Scroll past the promotional banner.
+2. Locate the card titled **Sandbox**.
+3. Click the link inside the card that says **Create Sandbox instance**.
+
+## Step 3: Enable Required APIs
+If this is a brand new GCP project, you may hit an interim screen requiring you to enable underlying APIs.
+
+1. Look for **Compute Engine API** showing as "Not enabled".
+2. Click the **Enable** button at the bottom of the list.
+3. Wait 30-60 seconds. The page will automatically refresh into the main configuration form once complete.
+
+## Step 4: Basic Instance Info
+1. **Database version:** Select the latest supported version (e.g., **PostgreSQL 18**).
+2. **Instance ID:** Name your instance (e.g., `level-db-instance`). Use lowercase letters and hyphens.
+3. **Password:** Click **Generate** or type a highly secure password for the default `postgres` user. **Save this password immediately**, as you will need it for your Django `.env` and `app.yaml` files!
+4. **Region:** Choose a region close to you (e.g., `us-central1 (Iowa)`). Leave Zonal availability as **Single zone** to save costs.
+
+## Step 5: The Micro-Tier Hardware Configuration
+This is the most critical step for cost-saving.
+
+1. Scroll down to **Choose a Cloud SQL edition**.
+2. Ensure the radio button for **Cloud SQL Enterprise** is selected (NOT Enterprise Plus).
+3. Scroll down and expand the **Customize your instance** (or **Machine configuration**) section.
+4. Locate the **Machine type** or **Presets** dropdown.
+5. Change the category from "Standard" to **Shared core**.
+6. Select the **`db-f1-micro`** option (1 vCPU, 0.6 GB RAM).
+
+## Step 6: Storage Optimization
+To reduce costs further, downgrade the storage from SSD to standard spinning disks.
+
+1. Expand the **Storage** section.
+2. Change "Storage type" from SSD to **HDD (Standard)**.
+3. Change "Storage capacity" to the minimum allowed (usually **10 GB**).
+4. Uncheck **Enable automatic storage increases** to prevent unexpected scaling charges.
+
+## Step 7: Finalize and Create
+1. Review the "Pricing estimate" in the bottom corner. It should reflect the low hourly cost of the shared-core machine and HDD storage.
+2. Click the blue **Create Instance** button at the bottom of the page.
+3. Wait 5-10 minutes for the instance to provision and show a green checkmark indicating it is ready to accept connections.
+
+## Step 8: Create the Database
+The previous steps created the database *server* (the Instance). Now you need to create the actual database inside that server.
+
+1. Once the instance has a green checkmark, click on its name (`level-db-instance`) to open the Overview page.
+2. In the left-hand menu, click on the **Databases** tab.
+3. Click the blue **Create database** button at the top.
+4. Name your database (e.g., `levelup_db`).
+5. Click **Create**.
+
+## Step 9: Retrieve Your Connection Name
+To connect your local Django application or App Engine environment to this cloud database, you need the instance's unique connection string.
+
+1. Navigate back to the **Overview** page for your instance.
+2. Scroll down to the **Connect to this instance** section.
+3. Locate the **Connection name** (it will look like `YOUR_PROJECT_ID:us-central1:level-db-instance`).
+4. Copy and save this string.
+
+---
+
+## Step 10: Local Connection via Cloud SQL Auth Proxy
+To run production migrations from your local Mac/PC before deploying to App Engine, you must use the Cloud SQL Auth Proxy. This creates a secure, encrypted tunnel from your local machine directly to the Google data center.
+
+1. Download the Cloud SQL Proxy binary for your OS (e.g., Apple Silicon ARM64) and place it in your project root folder.
+2. Open a dedicated terminal tab and start the proxy using your connection string:
+
+    ./cloud-sql-proxy YOUR_PROJECT_ID:us-central1:level-db-instance
+
+3. Keep this terminal tab open. Wait until the terminal outputs: **"Ready for new connections"**.
+
+## Step 11: Initializing the Production Database
+A brand new Cloud SQL database is completely empty. It does not have the tables required to store user accounts or Django app data. If you attempt to create a superuser or boot the application now, you will encounter a `relation "auth_user" does not exist` error.
+
+While the Cloud SQL proxy is running in the background, open a **new terminal tab**, activate your virtual environment, and push your schemas to the cloud:
+
+1. **Apply Migrations:**
+
+    python manage.py migrate
+    
+2. **Create the Production Admin:**
+Once the migrations complete successfully, generate the administrator account for your live site:
+
+    python manage.py createsuperuser
+
+Your Cloud SQL database is now fully configured, populated with your Django tables, and ready for the App Engine deployment!
+
+### ./pages/models.py ###
+
+from django.db import models
+
+# Create your models here.
+
+
+### ./pages/urls.py ###
+
+from django.urls import path
+from .views import home_page_view
+
+urlpatterns = [
+    path("", home_page_view, name="home"),
+]
