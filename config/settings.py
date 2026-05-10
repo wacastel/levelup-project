@@ -97,9 +97,12 @@ if env('GAE_APPLICATION', default=None):
         }
     }
 else:
-    # If running locally, use the .env file and Auth Proxy
+    # DEVELOPMENT: Force Local SQLite
     DATABASES = {
-        'default': env.db(),
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
 
 # Password validation
