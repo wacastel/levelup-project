@@ -6,7 +6,7 @@ entrypoint: gunicorn -b :$PORT config.wsgi:application
 
 env_variables:
   # We pass the production database credentials securely through the environment
-  DB_NAME: "levelup_db"
+  DB_NAME: "levelup_final"
   DB_USER: "postgres"
   DB_PASS: "Plot5150!"
   # Be sure this matches your exact connection string from earlier
